@@ -50,10 +50,14 @@ def build_vectors(chunks, model_name="all-MiniLM-L6-v2"):
 
 
 # 4. LOAD BASE
-def load_base(pdf_path="01_College_Information.pdf"):
-    full_text = load_pdf(pdf_path)  # Loads and extracts PDF text.
-    chunks = create_chunks(full_text)  # Splits text into overlapping chunks.
-    embed_model, index = build_vectors(chunks)  # Generates embeddings and builds the index.
+def load_base(pdf_path="college_docs"):
+  chunks = []
+  for pdf in Path(pdf_path).glob("*.pdf"):
+    full_text = load_pdf(pdf)
+    chunks.extend(create_chunks(full_text))
+  index, embed_model = build_vectors(chunks)
+  return index,embed_model, chunks
+
 
     return index, embed_model, chunks  # Returns all required RAG components.
 
