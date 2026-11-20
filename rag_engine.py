@@ -1,3 +1,4 @@
+
 import faiss  # Used for similarity search.
 import numpy as np  # Used for numerical operations.
 from groq import Groq  # Connects to Groq LLM.
@@ -44,6 +45,7 @@ def build_vectors(chunks, model_name="all-MiniLM-L6-v2"):
     embed_vectors = embed_model.encode(chunks, convert_to_numpy=True)  # Converts chunks into numerical vectors.
     embed_vectors = np.asarray(embed_vectors, dtype="float32")  # Converts vectors into FAISS-compatible format.
     faiss.normalize_L2(embed_vectors)  # Normalizes vectors for cosine similarity.
+
     index = faiss.IndexFlatIP(embed_vectors.shape[1])  # Creates a FAISS similarity search index.
     index.add(embed_vectors)  # Stores vectors in the index.
 
@@ -52,12 +54,22 @@ def build_vectors(chunks, model_name="all-MiniLM-L6-v2"):
 
 # 4. LOAD BASE
 def load_base(pdf_path="college_docs"):
-    chunks = []
+    chunks = []  # Stores all PDF chunks.
+    path = Path(pdf_path)  # Converts the path into a Path object.
 
-    for pdf in Path(pdf_path).glob("*.pdf"):
-        full_text = load_pdf(pdf)
-        chunks.extend(create_chunks(full_text))
-        embed_model, index = build_vectors(chunks)
+    if path.is_file() and path.suffix.lower() == ".pdf":  # Checks if the path is a PDF file.
+        full_text = load_pdf(path)  # Extracts text from the PDF.
+        chunks.extend(create_chunks(full_text))  # Creates chunks from the PDF.
+
+    elif path.is_dir():  # Checks whether the path is a folder.
+        for pdf in path.glob("*.pdf"):  # Finds all PDFs inside the folder.
+            full_text = load_pdf(pdf)  # Extracts text from each PDF.
+            chunks.extend(create_chunks(full_text))  # Adds chunks to the list.
+
+    if not chunks:  # Checks whether any chunks were created.
+        raise ValueError("No PDF files or readable content found.")
+
+    embed_model, index = build_vectors(chunks)  # Creates embeddings and the FAISS index.
 
     return index, embed_model, chunks  # Returns all required RAG components.
 
