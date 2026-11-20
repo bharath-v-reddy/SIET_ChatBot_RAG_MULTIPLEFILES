@@ -57,8 +57,7 @@ def load_base(pdf_path="college_docs"):
     for pdf in Path(pdf_path).glob("*.pdf"):
         full_text = load_pdf(pdf)
         chunks.extend(create_chunks(full_text))
-
-    embed_model, index = build_vectors(chunks)
+        embed_model, index = build_vectors(chunks)
 
     return index, embed_model, chunks  # Returns all required RAG components.
 
