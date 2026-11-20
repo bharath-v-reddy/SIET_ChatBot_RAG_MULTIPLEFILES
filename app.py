@@ -1,23 +1,41 @@
+
 import streamlit as st
+from pathlib import Path
 from rag_engine import load_base, ask_rag
 
 st.set_page_config(page_title="SIET_Chatbot", layout="centered")
+
 st.title("Shridevi Institute of Engineering and Technology - ChatBot")
 st.caption("Ask anything about college information, Placement, FAQS, Rules and Regulations")
 st.caption("RAG pipeline with multiple files")
 st.caption("Created by BHARATH V REDDY")
 
-mykey = st.secrets["GROQ_API_KEY"]
+# Load API key
+mykey = st.secrets.get("GROQ_API_KEY")
+
+if not mykey:
+    st.error("Groq API key is missing. Add it in Streamlit Secrets.")
+    st.stop()
 
 
 # Initialize RAG engine
 @st.cache_resource
 def initiate_rag():
-    return load_base("01_College_Information.pdf")
+    pdf_path = "01_College_Information.pdf"
+
+    if not Path(pdf_path).exists():
+        raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+
+    return load_base(pdf_path)
 
 
 # Load index, embedding model and chunks
-index, embed_model, chunks = initiate_rag()
+try:
+    index, embed_model, chunks = initiate_rag()
+
+except Exception as e:
+    st.error(f"Error loading RAG system: {e}")
+    st.stop()
 
 
 # Initialize chat history
@@ -37,6 +55,7 @@ question = st.chat_input("Ask anything about college....")
 
 if question:
 
+    # Store user message
     st.session_state.chat_hist.append(
         {
             "role": "user",
@@ -47,25 +66,31 @@ if question:
     with st.chat_message("user"):
         st.write(question)
 
+    # Generate answer
     with st.chat_message("assistant"):
         with st.spinner("Asking RAG for answer...."):
 
-            answer = ask_rag(
-                question,
-                embed_model,
-                chunks,
-                index,
-                api_key=mykey
-            )
+            try:
+                answer = ask_rag(
+                    question,
+                    embed_model,
+                    chunks,
+                    index,
+                    api_key=mykey
+                )
 
-            st.write(answer)
+                st.write(answer)
 
-            st.session_state.chat_hist.append(
-                {
-                    "role": "assistant",
-                    "content": answer
-                }
-            )
+                # Store assistant response
+                st.session_state.chat_hist.append(
+                    {
+                        "role": "assistant",
+                        "content": answer
+                    }
+                )
+
+            except Exception as e:
+                st.error(f"Error generating answer: {e}")
 
 
 # Clear chat history
