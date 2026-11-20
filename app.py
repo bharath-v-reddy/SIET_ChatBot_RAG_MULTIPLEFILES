@@ -21,7 +21,7 @@ if not mykey:
 # Initialize RAG engine
 @st.cache_resource
 def initiate_rag():
-    pdf_path = "college_docs.pdf"
+    pdf_path = "college_docs"
 
     if not Path(pdf_path).exists():
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
